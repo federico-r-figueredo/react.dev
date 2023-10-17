@@ -20,14 +20,14 @@ React, and many other UI libraries, model UI as a tree. Thinking of your app as 
 
 ## Your UI as a tree {/*your-ui-as-a-tree*/}
 
-Trees are a relationship model between items and UI is often represented using tree structures. For example on browsers, the [DOM](https://developer.mozilla.org/docs/Web/API/Document_Object_Model/Introduction) represents HTML elements while the [CSSOM](https://developer.mozilla.org/docs/Web/API/CSS_Object_Model) does the same for CSS. Similar for mobile, platform views relate to one another in a tree format. There’s even an [Accessibility tree](https://developer.mozilla.org/docs/Glossary/Accessibility_tree)!
+Trees are a relationship model between items and UI is often represented using tree structures. For example, browsers use tree structures to model HTML ([DOM](https://developer.mozilla.org/docs/Web/API/Document_Object_Model/Introduction)) and CSS ([CSSOM](https://developer.mozilla.org/docs/Web/API/CSS_Object_Model)). Mobile platforms also use trees to represent their view hierarchy. 
 
 <Diagram name="preserving_state_dom_tree" height={193} width={864} alt="Diagram with three sections arranged horizontally. In the first section, there are three rectangles stacked vertically, with labels 'Component A', 'Component B', and 'Component C'. Transitioning to the next pane is an arrow with the React logo on top labeled 'React'. The middle section contains a tree of components, with the root labeled 'A' and two children labeled 'B' and 'C'. The next section is again transitioned using an arrow with the React logo on top labeled 'React'. The third and final section is a wireframe of a browser, containing a tree of 8 nodes, which has only a subset highlighted (indicating the subtree from the middle section).">
 
-From components, React creates a UI tree which React DOM uses to render the DOM
+React creates a UI tree from your components. In this example, the UI tree is then used to render to the DOM.
 </Diagram>
 
-React also uses tree structures to manage and model the relationship between components in a React app. These trees are useful tools to understand how data flows through a React app and how to optimize rendering and app size.
+Like browsers and mobile platforms, React also uses tree structures to manage and model the relationship between components in a React app. These trees are useful tools to understand how data flows through a React app and how to optimize rendering and app size.
 
 ## The Render Tree {/*the-render-tree*/}
 
@@ -35,51 +35,51 @@ A major feature of components is the ability to compose components of other comp
 
 When we render a React app, we can model this relationship in a tree, known as the render tree.
 
-Here is a React app that renders a random greeting. 
+Here is a React app that renders inspirational quotes. 
 
 <Sandpack>
 
 ```js App.js
-import Title from './Title';
-import Greeting from './Greeting';
+import FancyText from './FancyText';
+import InspirationGenerator from './InspirationGenerator';
 import Copyright from './Copyright';
 
 export default function App() {
   return (
     <>
-      <Title text="Generate a random greeting" />
-      <Greeting>
+      <FancyText title text="Get Inspired App" />
+      <InspirationGenerator>
         <Copyright year={2004} />
-      </Greeting>
+      </InspirationGenerator>
     </>
   );
 }
 
 ```
 
-```js Title.js
-export default function Title({fancy, text}) {
-    return <h1 className={fancy ? 'fancy' : ''}>{text}</h1>;
+```js FancyText.js
+export default function FancyText({title, text}) {
+  return title
+    ? <h1 className='fancy title'>{text}</h1>
+    : <h3 className='fancy cursive'>{text}</h3>
 }
 ```
 
-```js Greeting.js
+```js InspirationGenerator.js
 import * as React from 'react';
-import greetings from './greetings';
-import Title from './Title';
+import quotes from './quotes';
+import FancyText from './FancyText';
 
-function randIndex(max) {
-  return Math.floor(Math.random() * max);
-}
+export default function InspirationGenerator({children}) {
+  const [index, setIndex] = React.useState(0);
+  const quote = quotes[index];
+  const next = () => setIndex((index + 1) % quotes.length);
 
-export default function Greeting({children}) {
-  const [index, setIndex] = React.useState(randIndex(greetings.length));
-  const greeting = greetings[index];
-  const nextGreeting = () => setIndex(randIndex(greetings.length));
   return (
     <>
-      <Title fancy text={greeting} />
-      <button onClick={nextGreeting}>🎲</button>
+      <p>Your inspirational quote is:</p>
+      <FancyText text={quote} />
+      <button onClick={next}>Inspire me again</button>
       {children}
     </>
   );
@@ -88,42 +88,55 @@ export default function Greeting({children}) {
 
 ```js Copyright.js
 export default function Copyright({year}) {
-  return <p>©️ {year}</p>;
+  return <p className='small'>©️ {year}</p>;
 }
 ```
 
-```js greetings.js
-export default ['Howdy!', 'Hello2!', 'Hello3!', 'Hello3!', 'Hello4!'];
+```js quotes.js
+export default [
+  "Don’t let yesterday take up too much of today.” — Will Rogers",
+  "Ambition is putting a ladder against the sky.",
+  "A joy that's shared is a joy made double.",
+  ];
 ```
 
 ```css
 .fancy {
-    font-style: italic;
-    color: blue;
+  font-family: 'Georgia';
+}
+.title {
+  color: #007AA3;
+  text-decoration: underline;
+}
+.cursive {
+  font-style: italic;
+}
+.small {
+  font-size: 10px;
 }
 ```
 
 </Sandpack>
 
-<Diagram name="render_tree" height={300} width={509} alt="Tree graph with 5 nodes. The root of the tree is App, with two arrows extending from it to nodes Greeting and Title. The arrows are labelled renders. Greeting node also has two arrows extended pointing down to nodes Title and Copyright.">
+<Diagram name="render_tree" height={250} width={500} alt="Tree graph with five nodes. Each node represents a component. The root of the tree is App, with two arrows extending from it to 'InspirationGenerator' and 'FancyText'. The arrows are labelled with the word 'renders'. 'InspirationGenerator' node also has two arrows pointing to nodes 'FancyText' and 'Copyright'.">
 
 React creates a UI tree made of components rendered, known as a render tree.
 
 </Diagram>
 
-From the example app, we can construct the above render tree. Each node in the tree represents a component and the root node is the [root component](/learn/importing-and-exporting-components#the-root-component-file). In this case, the root component is `App` and it is the first component React renders. Each arrow in the tree points from a parent component to a child component.
+From the example app, we can construct the above render tree. 
 
-We often refer to the components near the root of the tree as "top-level components". They are ancestors and have a lot of descendent components. Components that have no children are referred to as "leaves". 
+The tree is composed of nodes, each of which represents a component. `App`, `FancyText`, `Copyright`, to name a few, are all nodes in our tree. 
 
+The root node in a React render tree is the [root component](/learn/importing-and-exporting-components#the-root-component-file) of the app. In this case, the root component is `App` and it is the first component React renders. Each arrow in the tree points from a parent component to a child component.
 
-[comment]: <> (I'm not sure if we should have this, I think I'm trying to get the point across that render trees are platform-agnostic tool for understanding your React app)
 <DeepDive>
 
 #### Where are the HTML tags in the render tree? {/*where-are-the-html-elements-in-the-render-tree*/}
 
 You'll notice in the above render tree, there is no mention of the HTML tags that each component renders. This is because the render tree is only composed of React [components](learn/your-first-component#components-ui-building-blocks). 
 
-React, as a UI framework, is platform agonistic. On react.dev, we showcase examples that render to the web, which uses HTML markup as its UI primitives. But a React app could just as likely render to a mobile or desktop platform, which may use different UI primitives like [UIView](https://developer.apple.com/documentation/uikit/uiview) or [Framework Element](https://learn.microsoft.com/en-us/dotnet/api/system.windows.frameworkelement?view=windowsdesktop-7.0).
+React, as a UI framework, is platform agnostic. On react.dev, we showcase examples that render to the web, which uses HTML markup as its UI primitives. But a React app could just as likely render to a mobile or desktop platform, which may use different UI primitives like [UIView](https://developer.apple.com/documentation/uikit/uiview) or [Framework Element](https://learn.microsoft.com/en-us/dotnet/api/system.windows.frameworkelement?view=windowsdesktop-7.0).
 
 These platform UI primitives are not a part of React. React render trees can provide insight to our React app regardless of what platform your app renders to.
 
@@ -131,99 +144,115 @@ These platform UI primitives are not a part of React. React render trees can pro
 
 A render tree represents a single render pass of a React application. With [conditional rendering](/learn/conditional-rendering), a parent component may render different children depending on the data passed.
 
-We can update the Greeting app to conditionally render either an image or a text greeting.
+We can update the app to conditionally render either an inspirational quote or color.
 
 <Sandpack>
 
 ```js App.js
-import { Title } from './GreetingMedia';
-import Greeting from './Greeting';
+import FancyText from './FancyText';
+import InspirationGenerator from './InspirationGenerator';
 import Copyright from './Copyright';
 
 export default function App() {
   return (
     <>
-      <Title text="Generate a random greeting" />
-      <Greeting>
+      <FancyText title text="Get Inspired App" />
+      <InspirationGenerator>
         <Copyright year={2004} />
-      </Greeting>
+      </InspirationGenerator>
     </>
   );
 }
 
 ```
 
-```js GreetingMedia.js
-export function Title({fancy, text}) {
-  return <h1 className={fancy ? 'fancy' : ''}>{text}</h1>;
-}
-
-export function Image({src}) {
-  return <img src={src} />;
+```js FancyText.js
+export default function FancyText({title, text}) {
+  return title
+    ? <h1 className='fancy title'>{text}</h1>
+    : <h3 className='fancy cursive'>{text}</h3>
 }
 ```
 
-```js Greeting.js
-import * as React from 'react';
-import greetings from './greetings';
-import {Title, Image} from './GreetingMedia';
-
-function randIndex(max) {
-  return Math.floor(Math.random() * max);
+```js Color.js
+export default function Color({value}) {
+  return <div className="colorbox" style={{backgroundColor: value}} / >
 }
+```
 
-export default function Greeting({children}) {
-  const [index, setIndex] = React.useState(randIndex(greetings.length));
-  const greeting = greetings[index];
-  const nextGreeting = () => setIndex(randIndex(greetings.length));
+```js InspirationGenerator.js
+import * as React from 'react';
+import inspirations from './inspirations';
+import FancyText from './FancyText';
+import Color from './Color';
+
+export default function InspirationGenerator({children}) {
+  const [index, setIndex] = React.useState(0);
+  const inspiration = inspirations[index];
+  const next = () => setIndex((index + 1) % inspirations.length);
+
   return (
     <>
-      {greeting.type === 'text' ? (
-        <Title fancy text={greeting.value} />
-      ) : (
-        <Image src={greeting.value} />
-      )}
-      <button onClick={nextGreeting}>🎲</button>
+      <p>Your inspirational {inspiration.type} is:</p>
+      {inspiration.type === 'quote'
+      ? <FancyText text={inspiration.value} />
+      : <Color value={inspiration.value} />}
+      
+      <button onClick={next}>Inspire me again</button>
       {children}
     </>
   );
 }
-
 ```
 
 ```js Copyright.js
 export default function Copyright({year}) {
-  return <p>©️ {year}</p>;
+  return <p className='small'>©️ {year}</p>;
 }
 ```
 
-```js greetings.js
+```js inspirations.js
 export default [
-    {type: 'text', value: 'Howdy!'},
-    {type: 'text', value: 'Hello!'},
-    {type: 'image', value: 'https://i.imgur.com/yXOvdOSs.jpg'},
-    {type: 'image', value: 'https://i.imgur.com/yXOvdOSs.jpg'},
-    {type: 'text', value: 'Howdy!'},
+  {type: 'quote', value: "Don’t let yesterday take up too much of today.” — Will Rogers"},
+  {type: 'color', value: "#B73636"},
+  {type: 'quote', value: "Ambition is putting a ladder against the sky."},
+  {type: 'color', value: "#256266"},
+  {type: 'quote', value: "A joy that's shared is a joy made double."},
+  {type: 'color', value: "#F9F2B4"},
 ];
 ```
 
 ```css
 .fancy {
-    font-style: italic;
-    color: blue;
+  font-family: 'Georgia';
+}
+.title {
+  color: #007AA3;
+  text-decoration: underline;
+}
+.cursive {
+  font-style: italic;
+}
+.small {
+  font-size: 10px;
+}
+.colorbox {
+  height: 100px;
+  width: 100px;
+  margin: 8px;
 }
 ```
 </Sandpack>
 
-<Diagram name="conditional_render_tree" height={300} width={522} alt="TODO.">
+<Diagram name="conditional_render_tree" height={250} width={561} alt="Tree graph with six nodes. The top node of the tree is labelled 'App' with two arrows extending to nodes labelled 'InspirationGenerator' and 'FancyText'. The arrows are solid lines and are labelled with the word 'renders'. 'InspirationGenerator' node also has three arrows. The arrows to nodes 'FancyText' and 'Color' are dashed and labelled with 'renders?'. The last arrow points to the node labelled 'Copyright' and is solid and labelled with 'renders'.">
 
 With conditional rendering, across different renders, the render tree may render different components.
 
 </Diagram>
 
-In this example, depending on what `greeting.type` is, we may render `<Title>` or `<Image>`. The render tree may be different for each render pass.
+In this example, depending on what `inspiration.type` is, we may render `<FancyText>` or `<Color>`. The render tree may be different for each render pass.
 
-Although render trees may differ across render pases, these trees are generally helpful for identifying what the top-level components are in a React app. Top-level components affect the rendering performance of all the components beneath them and often contain the most complexity.
+Although render trees may differ across render pases, these trees are generally helpful for identifying what the top-level and leaf components are in a React app. Top-level components are the components nearest to the root component and affect the rendering performance of all the components beneath them and often contain the most complexity. Leaf components are near the bottom of the tree and have no child components and are often frequently re-rendered. Identifying these categories of components are useful for understanding data flow and performance of your app.
 
 ## The Module Dependency Tree {/*the-module-dependency-tree*/}
 
@@ -231,11 +260,11 @@ Another relationship in a React app that can be modeled with a tree are an app's
 
 Each node in a module dependency tree is a module and each branch represents an `import` statement in that module.
 
-If we take the previous Greeting app, we can build a module dependency tree, or dependency tree for short. 
+If we take the previous Inspirations app, we can build a module dependency tree, or dependency tree for short. 
 
-<Diagram name="module_dependency_tree" height={400} width={761} alt="TODO.">
+<Diagram name="module_dependency_tree" height={250} width={658} alt="A tree graph with seven nodes. Each node is labelled with a module name. The top level node of the tree is labelled 'App.js'. There are three arrows pointing to the modules 'InspirationGenerator.js', 'FancyText.js' and 'Copyright.js' and the arrows are labelled with 'imports'. From the 'InspirationGenerator.js' node, there are three arrows that extend to three modules: 'FancyText.js', 'Color.js', and 'inspirations.js'. The arrows are labelled with 'imports'.">
 
-The module dependency tree for the Greetings app
+The module dependency tree for the Inspirations app.
 
 </Diagram>
 
@@ -243,13 +272,13 @@ The root node of the tree is the root module, also known as the entrypoint file.
 
 Comparing to the render tree of the same app, there are similar structures but some notable differences:
 
-* Tree nodes are modules vs. components. Often, a module exports a single component but in this case `GreetingMedia.js` exports both `Title` and `Image`.
-* Non-component modules are also represented in this tree. The render tree only encapsulates components.
-* `Copyright.js` appears under `App.js` but in the render tree, `Copyright`, the component, appears as a child of `Greeting`. This is because `Greeting` accepts JSX as children. 
+* The nodes that make-up the tree represent modules, versus components. 
+* Non-component modules, like `inspirations.js`, are also represented in this tree. The render tree only encapsulates components.
+* `Copyright.js` appears under `App.js` but in the render tree, `Copyright`, the component, appears as a child of `InspirationGenerator`. This is because `InspirationGenerator` accepts JSX as children props. 
 
-Dependency trees are useful to determine what modules are necessary to run your React app. When building a React app for production, there is typically a build step that will bundle all the necessary JavaScript to ship to the client. The tool responsible for this is called a bundler, and bundlers will use the dependency tree to determine what modules should be included.
+Dependency trees are useful to determine what modules are necessary to run your React app. When building a React app for production, there is typically a build step that will bundle all the necessary JavaScript to ship to the client. The tool responsible for this is called a [bundler](https://developer.mozilla.org/en-US/docs/Learn/Tools_and_testing/Understanding_client-side_tools/Overview#the_modern_tooling_ecosystem), and bundlers will use the dependency tree to determine what modules should be included.
 
-As your app grows, often the bundle size does too. Large bundle sizes are expensive for a client to download and run so getting a sense of your app's dependency tree may help with debugging the issue.
+As your app grows, often the bundle size does too. Large bundle sizes are expensive for a client to download and run and delays the time for your UI to get drawn. Getting a sense of your app's dependency tree may help with debugging these issues.
 
 [comment]: <> (perhaps we should also deep dive on conditional imports)
 
@@ -258,10 +287,10 @@ As your app grows, often the bundle size does too. Large bundle sizes are expens
 * Trees are a common way to represent the relationship between entities. They are often used to model UI.
 * Render trees represent the nested relationship between React components across a single render.
 * With conditional rendering, the render tree may change across different renders. With different prop values, components may render different children components. 
-* Render trees help identify what the top-level components are. Top-level components affect the rendering performance of all components beneath them. Identifying them is useful for debugging slow renders.
+* Render trees help identify what the top-level and leaf components are. Top-level components affect the rendering performance of all components beneath them and leaf components are often re-rendered frequently. Identifying them is useful for understanding and debugging rendering performance.
 * Dependency trees represent the module dependencies in a React app.
 * Dependency trees are used by build tools to bundle the necessary code to ship an app.
-* Dependency trees are useful for debugging large bundle sizes and opportunities for optimizing what code is bundled.
+* Dependency trees are useful for debugging large bundle sizes that slow time to paint and expose opportunities for optimizing what code is bundled.
 
 </Recap>
 
